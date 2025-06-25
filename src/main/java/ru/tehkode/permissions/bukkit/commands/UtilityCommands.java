@@ -24,7 +24,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import ru.tehkode.permissions.PermissionBackend;
+import ru.tehkode.permissions.PermissionGroup;
 import ru.tehkode.permissions.PermissionManager;
+import ru.tehkode.permissions.PermissionUser;
 import ru.tehkode.permissions.bukkit.ErrorReport;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
 import ru.tehkode.permissions.commands.Command;
@@ -35,6 +37,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -253,4 +256,69 @@ public class UtilityCommands extends PermissionsCommand {
 			sender.sendMessage(ChatColor.AQUA + "    " + command.description());
 		}
 	}
+
+	@Command(name = "pex",
+			syntax = "user info <username>",
+			permission = "permissions.manage.users",
+			description = "Show detailed information about a user")
+	public void userInfo(Plugin plugin, CommandSender sender, Map<String, String> args) {
+		String username = args.get("username");
+		if (username == null || username.isEmpty()) {
+			sender.sendMessage(ChatColor.RED + "Please specify a username.");
+			return;
+		}
+
+		PermissionUser user = PermissionsEx.getPermissionManager().getUser(username);
+		if (user == null) {
+			sender.sendMessage(ChatColor.RED + "User not found.");
+			return;
+		}
+
+		sender.sendMessage(ChatColor.GREEN + "Info for user: " + username);
+
+		String[] groupNames = Arrays.stream(user.getGroups(null))
+									.map(PermissionGroup::getName)
+									.toArray(String[]::new);
+
+		sender.sendMessage(ChatColor.YELLOW + "Groups: " + String.join(", ", groupNames));
+		sender.sendMessage(ChatColor.YELLOW + "Permissions:");
+		for (String perm : user.getPermissions(null)) {
+			sender.sendMessage("  - " + perm);
+		}
+		sender.sendMessage(ChatColor.YELLOW + "Prefix: " + user.getPrefix(null));
+		sender.sendMessage(ChatColor.YELLOW + "Suffix: " + user.getSuffix(null));
+	}
+
+	@Command(name = "pex",
+			syntax = "group info <groupname>",
+			permission = "permissions.manage.groups",
+			description = "Show detailed information about a group")
+	public void groupInfo(Plugin plugin, CommandSender sender, Map<String, String> args) {
+		String groupName = args.get("groupname");
+		if (groupName == null || groupName.isEmpty()) {
+			sender.sendMessage(ChatColor.RED + "Please specify a group name.");
+			return;
+		}
+
+		PermissionGroup group = PermissionsEx.getPermissionManager().getGroup(groupName);
+		if (group == null) {
+			sender.sendMessage(ChatColor.RED + "Group not found.");
+			return;
+		}
+
+		sender.sendMessage(ChatColor.GREEN + "Info for group: " + groupName);
+
+		String[] parentNames = Arrays.stream(group.getParentGroups(null))
+									.map(PermissionGroup::getName)
+									.toArray(String[]::new);
+
+		sender.sendMessage(ChatColor.YELLOW + "Parents: " + String.join(", ", parentNames));
+		sender.sendMessage(ChatColor.YELLOW + "Permissions:");
+		for (String perm : group.getPermissions(null)) {
+			sender.sendMessage("  - " + perm);
+		}
+		sender.sendMessage(ChatColor.YELLOW + "Prefix: " + group.getPrefix(null));
+		sender.sendMessage(ChatColor.YELLOW + "Suffix: " + group.getSuffix(null));
+	}
+
 }

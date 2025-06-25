@@ -26,16 +26,37 @@ public abstract class ProxyPermissionUser extends PermissionUser {
 
 	protected PermissionEntity backendEntity;
 
-	public ProxyPermissionUser(PermissionEntity backendEntity) {
+	// Private constructor; null-check moved out
+	protected ProxyPermissionUser(PermissionEntity backendEntity) {
 		super(backendEntity.getName(), backendEntity.manager);
-
 		this.backendEntity = backendEntity;
-
 		this.setName(backendEntity.getName());
-
 		this.virtual = backendEntity.isVirtual();
-
 	}
+
+
+
+	/**
+	 * Factory method to create a ProxyPermissionUser instance.
+	 * Performs null check before calling constructor.
+	 */
+	public static ProxyPermissionUser create(PermissionEntity backendEntity) {
+		if (backendEntity == null) {
+			throw new IllegalArgumentException("backendEntity cannot be null");
+		}
+		return new ProxyPermissionUser(backendEntity) {
+			@Override
+			public void setGroups(String[] groups, String world) {
+				throw new UnsupportedOperationException("setGroups is not supported by backendEntity");
+			}
+
+			@Override
+			protected String[] getGroupsNamesImpl(String world) {
+				throw new UnsupportedOperationException("getGroupsNamesImpl is not supported by backendEntity");
+			}
+		};
+	}
+
 
 	@Override
 	public void initialize() {
@@ -61,14 +82,12 @@ public abstract class ProxyPermissionUser extends PermissionUser {
 	@Override
 	public void setPrefix(String prefix, String worldName) {
 		this.backendEntity.setPrefix(prefix, worldName);
-
 		this.clearCache();
 	}
 
 	@Override
 	public void setSuffix(String suffix, String worldName) {
 		this.backendEntity.setSuffix(suffix, worldName);
-
 		this.clearCache();
 	}
 
@@ -90,9 +109,7 @@ public abstract class ProxyPermissionUser extends PermissionUser {
 	@Override
 	public void setPermissions(String[] permissions, String world) {
 		this.backendEntity.setPermissions(permissions, world);
-
 		this.clearCache();
-
 		this.callEvent(PermissionEntityEvent.Action.PERMISSIONS_CHANGED);
 	}
 
@@ -114,9 +131,7 @@ public abstract class ProxyPermissionUser extends PermissionUser {
 	@Override
 	public void setOption(String permission, String value, String world) {
 		this.backendEntity.setOption(permission, value, world);
-
 		this.clearCache();
-
 		this.callEvent(PermissionEntityEvent.Action.OPTIONS_CHANGED);
 	}
 

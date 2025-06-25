@@ -210,6 +210,10 @@ public abstract class PermissionGroup extends PermissionEntity implements Compar
 
 	protected abstract String[] getParentGroupsNamesImpl(String worldName);
 
+	public PermissionGroup[] getParents(String worldName) {
+		return this.getParentGroups(worldName);
+	}
+
 	/**
 	 * Returns array of parent groups objects
 	 *

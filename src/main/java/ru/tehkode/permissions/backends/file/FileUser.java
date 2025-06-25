@@ -43,6 +43,7 @@ public class FileUser extends ProxyPermissionUser {
 		this.node = ((FileEntity) this.backendEntity).getConfigNode();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected String[] getGroupsNamesImpl(String worldName) {
 		Object groups = this.node.get(FileEntity.formatPath(worldName, "group"));
@@ -67,6 +68,7 @@ public class FileUser extends ProxyPermissionUser {
 			return new String[0];
 		}
 	}
+
 
 	@Override
 	public void setGroups(String[] groups, String worldName) {

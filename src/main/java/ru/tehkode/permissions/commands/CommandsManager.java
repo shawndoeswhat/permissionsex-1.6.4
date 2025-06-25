@@ -231,10 +231,13 @@ public class CommandsManager {
 		}
 
 		public boolean checkPermissions(Player player) {
+			if (player.isOp()) {
+				return true;
+			}
+
 			PermissionManager manager = PermissionsEx.getPermissionManager();
 
 			String permission = this.getMethodAnnotation().permission();
-
 
 			if (permission.contains("<")) {
 				for (Entry<String, String> entry : this.getParams().entrySet()) {
@@ -245,7 +248,6 @@ public class CommandsManager {
 			}
 
 			return manager.has(player, permission);
-
 		}
 
 		public void call(Object... args) throws Exception {

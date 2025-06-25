@@ -138,39 +138,60 @@ public abstract class PermissionBackend {
 	public abstract PermissionGroup[] getGroups();
 
 	/**
-	 * Return child groups of specified group
+	 * Returns an array of direct child groups of the specified group, in the global context (no specific world).
 	 *
-	 * @param groupName
-	 * @return empty array if group has no children, empty or not exist
+	 * @param groupName the name of the parent group
+	 * @return an array of PermissionGroup objects that are direct children of the specified group globally
 	 */
 	public PermissionGroup[] getGroups(String groupName) {
 		return this.getGroups(groupName, null);
 	}
 
+	/**
+	 * Returns an array of child groups of the specified group in a given world.
+	 * Only direct children are returned (inheritance = false).
+	 *
+	 * @param groupName the name of the parent group
+	 * @param worldName the world name to check, or null for global
+	 * @return an array of PermissionGroup objects that are direct children of the specified group in the given world
+	 */
 	public PermissionGroup[] getGroups(String groupName, String worldName) {
 		return this.getGroups(groupName, worldName, false);
 	}
 
 	/**
-	 * Return child groups of specified group.
+	 * Returns an array of child groups of the specified group, optionally including
+	 * all descendants, across all worlds and the global scope.
 	 *
-	 * @param groupName
-	 * @param inheritance - If true a full list of descendants will be returned
-	 * @return empty array if group has no children, empty or not exist
+	 * This method aggregates child groups from every loaded world as well as the
+	 * global context (null world), avoiding duplicates.
+	 *
+	 * @param groupName the name of the parent group to find children of
+	 * @param inheritance if true, include all descendant groups, not just direct children
+	 * @return an array of PermissionGroup objects that are children of the specified group across all worlds
 	 */
 	public PermissionGroup[] getGroups(String groupName, boolean inheritance) {
 		Set<PermissionGroup> groups = new HashSet<PermissionGroup>();
-
 		for (World world : Bukkit.getServer().getWorlds()) {
 			groups.addAll(Arrays.asList(getGroups(groupName, world.getName(), inheritance)));
 		}
-
-		// Common space users
 		groups.addAll(Arrays.asList(getGroups(groupName, null, inheritance)));
-
 		return groups.toArray(new PermissionGroup[0]);
 	}
 
+	/**
+	 * Returns an array of child groups of the specified group, optionally including
+	 * all descendants if inheritance is true.
+	 *
+	 * This method checks all registered groups and returns those that are children
+	 * (or descendants, if inheritance is true) of the given groupName within the
+	 * specified world.
+	 *
+	 * @param groupName the name of the parent group to find children of
+	 * @param worldName the world name to scope the search, or null for global
+	 * @param inheritance if true, include all descendant groups, not just direct children
+	 * @return an array of PermissionGroup objects that are children of the specified group
+	 */
 	public PermissionGroup[] getGroups(String groupName, String worldName, boolean inheritance) {
 		List<PermissionGroup> groups = new LinkedList<PermissionGroup>();
 
@@ -184,9 +205,12 @@ public abstract class PermissionBackend {
 	}
 
 	/**
-	 * Return all registered and online users
+	 * Returns an array of all known users, including both online and registered users.
 	 *
-	 * @return
+	 * This method collects users currently online as well as all registered users
+	 * stored in the backend, combining them into a single array without duplicates.
+	 *
+	 * @return an array of PermissionUser objects representing all known users
 	 */
 	public PermissionUser[] getUsers() {
 		Set<PermissionUser> users = new HashSet<PermissionUser>();
@@ -201,12 +225,23 @@ public abstract class PermissionBackend {
 	}
 
 	/**
-	 * Return all registered users
-	 *
-	 * @return
+	 * Returns all registered users known to the backend.
+	 * 
+	 * This includes users who may not be currently online but have data stored
+	 * in the permission system.
+	 * 
+	 * @return an array of all registered PermissionUser objects
 	 */
 	public abstract PermissionUser[] getRegisteredUsers();
 
+	/**
+	 * Returns an unmodifiable collection of the names of all registered users.
+	 *
+	 * This method retrieves all registered users via {@link #getRegisteredUsers()},
+	 * extracts their names, and returns them as an unmodifiable collection.
+	 *
+	 * @return an unmodifiable collection containing the names of all registered users
+	 */
 	public Collection<String> getRegisteredUserNames() {
 		PermissionUser[] users = getRegisteredUsers();
 		List<String> ret = new ArrayList<String>(users.length);
@@ -216,6 +251,14 @@ public abstract class PermissionBackend {
 		return Collections.unmodifiableCollection(ret);
 	}
 
+	/**
+	 * Returns an unmodifiable collection of the names of all registered groups.
+	 *
+	 * This method retrieves all registered groups via {@link #getGroups()},
+	 * extracts their names, and returns them as an unmodifiable collection.
+	 *
+	 * @return an unmodifiable collection containing the names of all registered groups
+	 */
 	public Collection<String> getRegisteredGroupNames() {
 		PermissionGroup[] groups = getGroups();
 		List<String> ret = new ArrayList<String>(groups.length);
@@ -226,25 +269,41 @@ public abstract class PermissionBackend {
 	}
 
 	/**
-	 * Return users of specified group.
+	 * Returns an array of users who belong to the specified group.
 	 *
-	 * @param groupName
-	 * @return null if there is no such group
+	 * This method returns users directly in the specified group without
+	 * including users from child groups (inheritance is false).
+	 *
+	 * @param groupName the name of the group
+	 * @return an array of PermissionUser objects belonging to the specified group
 	 */
 	public PermissionUser[] getUsers(String groupName) {
 		return getUsers(groupName, false);
 	}
-
+	
+	/**
+	 * Returns an array of users who belong to the specified group in the given world.
+	 *
+	 * This method returns users directly in the specified group and world without
+	 * including users from child groups (inheritance is false).
+	 *
+	 * @param groupName the name of the group
+	 * @param worldName the name of the world
+	 * @return an array of PermissionUser objects belonging to the specified group and world
+	 */
 	public PermissionUser[] getUsers(String groupName, String worldName) {
 		return getUsers(groupName, worldName, false);
 	}
 
 	/**
-	 * Return users of specified group (and child groups)
+	 * Returns an array of users who belong to the specified group.
 	 *
-	 * @param groupName
-	 * @param inheritance - If true return users list of descendant groups too
-	 * @return
+	 * If inheritance is true, users who belong to child groups of the specified group
+	 * will also be included.
+	 *
+	 * @param groupName   the name of the group
+	 * @param inheritance if true, include users in child groups recursively
+	 * @return an array of PermissionUser objects belonging to the specified group (and optionally its descendants)
 	 */
 	public PermissionUser[] getUsers(String groupName, boolean inheritance) {
 		Set<PermissionUser> users = new HashSet<PermissionUser>();

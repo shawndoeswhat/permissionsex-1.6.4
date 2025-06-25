@@ -3,39 +3,93 @@ package ru.tehkode.utils;
 import java.lang.reflect.Field;
 
 /**
- * @author zml2008
+ * Utility class for replacing or accessing private fields using reflection.
+ *
+ * @param <Instance> The type of the class containing the field.
+ * @param <Type>     The type of the field value.
  */
 public class FieldReplacer<Instance, Type> {
-	private final Class<Type> requiredType;
-	private final Field field;
 
-	public FieldReplacer(Class<? extends Instance> clazz, String fieldName, Class<Type> requiredType) {
-		try {
-			this.requiredType = requiredType;
-			field = clazz.getDeclaredField(fieldName);
+    private final Class<Type> requiredType;
+    private final Field field;
 
-			field.setAccessible(true);
-			if (!requiredType.isAssignableFrom(field.getType())) {
-				throw new ExceptionInInitializerError("Field of wrong type");
-			}
-		} catch (NoSuchFieldException e) {
-			throw new ExceptionInInitializerError(e);
-		}
-	}
+    private static boolean isTypeCompatible(Class<?> fieldType, Class<?> requiredType) {
+        if (requiredType.isAssignableFrom(fieldType)) {
+            return true;
+        }
+        if (fieldType.isPrimitive()) {
+            if (fieldType == boolean.class && requiredType == Boolean.class) return true;
+            if (fieldType == byte.class && requiredType == Byte.class) return true;
+            if (fieldType == short.class && requiredType == Short.class) return true;
+            if (fieldType == int.class && requiredType == Integer.class) return true;
+            if (fieldType == long.class && requiredType == Long.class) return true;
+            if (fieldType == float.class && requiredType == Float.class) return true;
+            if (fieldType == double.class && requiredType == Double.class) return true;
+            if (fieldType == char.class && requiredType == Character.class) return true;
+        }
+        return false;
+    }
 
-	public Type get(Instance instance) {
-		try {
-			return this.requiredType.cast(field.get(instance));
-		} catch (IllegalAccessException e) {
-			throw new Error(e);
-		}
-	}
+    /**
+     * Constructs a FieldReplacer to access a declared field of a class.
+     *
+     * @param clazz         Class containing the field.
+     * @param fieldName     Name of the field to access.
+     * @param requiredType  Expected type of the field.
+     */
+    public FieldReplacer(Class<? extends Instance> clazz, String fieldName, Class<Type> requiredType) {
+        this.requiredType = requiredType;
 
-	public void set(Instance instance, Type newValue) {
-		try {
-			field.set(instance, newValue);
-		} catch (IllegalAccessException e) {
-			throw new Error(e); // This shouldn't happen because we call setAccessible in the constructor
-		}
-	}
+        try {
+            System.out.println("Looking for field '" + fieldName + "' in class " + clazz.getName());
+            this.field = clazz.getDeclaredField(fieldName);
+            this.field.setAccessible(true);
+
+            if (!isTypeCompatible(field.getType(), requiredType)) {
+                System.err.println("Field '" + fieldName + "' is of type " + field.getType().getName() +
+                        ", expected " + requiredType.getName());
+                throw new ExceptionInInitializerError("Field '" + fieldName + "' has incorrect type.");
+            }
+
+            System.out.println("Field '" + fieldName + "' successfully bound to " + field.getType().getName());
+
+        } catch (NoSuchFieldException e) {
+            System.err.println("Field '" + fieldName + "' not found in class " + clazz.getName());
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+
+    /**
+     * Gets the value of the field from the given instance.
+     *
+     * @param instance The instance from which to get the field.
+     * @return The value of the field.
+     */
+    public Type get(Instance instance) {
+        try {
+            Type value = requiredType.cast(field.get(instance));
+            System.out.println("Retrieved value from field '" + field.getName() + "': " + value);
+            return value;
+        } catch (IllegalAccessException e) {
+            System.err.println("Failed to access field '" + field.getName() + "' for getting value.");
+            throw new Error(e);
+        }
+    }
+
+    /**
+     * Sets the value of the field on the given instance.
+     *
+     * @param instance The instance to modify.
+     * @param newValue The new value to set.
+     */
+    public void set(Instance instance, Type newValue) {
+        try {
+            System.out.println("Setting field '" + field.getName() + "' to value: " + newValue);
+            field.set(instance, newValue);
+        } catch (IllegalAccessException e) {
+            System.err.println("Failed to access field '" + field.getName() + "' for setting value.");
+            throw new Error(e);
+        }
+    }
 }

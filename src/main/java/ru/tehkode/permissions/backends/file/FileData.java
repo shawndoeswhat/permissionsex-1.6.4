@@ -20,8 +20,8 @@ public class FileData implements PermissionsUserData, PermissionsGroupData {
 
 	public FileData(String basePath, String name, FileConfig config) {
 		this.config = config;
-
 		this.node = findNode(name, basePath);
+		System.out.println("[FileData] Loaded data for entity '" + name + "' at path '" + nodePath + "' (virtual: " + virtual + ")");
 	}
 
 	private ConfigurationSection findNode(String entityName, String basePath) {
@@ -31,6 +31,7 @@ public class FileData implements PermissionsUserData, PermissionsGroupData {
 
 		if (entityNode != null) {
 			this.virtual = false;
+			System.out.println("[FileData] Found existing node for '" + entityName + "' at '" + nodePath + "'");
 			return entityNode;
 		}
 
@@ -41,17 +42,16 @@ public class FileData implements PermissionsUserData, PermissionsGroupData {
 				if (entry.getKey().equalsIgnoreCase(entityName)
 						&& entry.getValue() instanceof ConfigurationSection) {
 					this.nodePath = FileBackend.buildPath(basePath, entityName);
+					System.out.println("[FileData] Found node for '" + entityName + "' (case-insensitive) at '" + nodePath + "'");
 					return (ConfigurationSection) entry.getValue();
 				}
 			}
 		}
 
-		// Silly workaround for empty nodes
 		ConfigurationSection section = this.config.createSection(nodePath);
 		this.config.set(nodePath, null);
-
+		System.out.println("[FileData] Created new virtual node for '" + entityName + "' at '" + nodePath + "'");
 		return section;
-
 	}
 
 	/**
@@ -179,20 +179,35 @@ public class FileData implements PermissionsUserData, PermissionsGroupData {
 		Object groups = this.node.get(FileEntity.formatPath(worldName, "group"));
 
 		if (groups instanceof String) { // old style
+			String groupsString = (String) groups;
 			String[] groupsArray;
-			String groupsString = ((String) groups);
 			if (groupsString.contains(",")) {
-				groupsArray = ((String) groups).split(",");
+				groupsArray = groupsString.split(",");
 			} else {
 				groupsArray = new String[]{groupsString};
 			}
-
 			return Arrays.asList(groupsArray);
-		} else if (groups instanceof List) {
-			return (List<String>) groups;
-		} else {
-			return new ArrayList<String>(0);
+		} else if (groups instanceof List<?>) {
+			List<?> rawList = (List<?>) groups;
+
+			boolean allStrings = true;
+			for (Object o : rawList) {
+				if (!(o instanceof String)) {
+					allStrings = false;
+					break;
+				}
+			}
+
+			if (allStrings) {
+				@SuppressWarnings("unchecked")
+				List<String> stringList = (List<String>) rawList;
+				return stringList;
+			} else {
+				return new ArrayList<String>(0);
+			}
 		}
+
+		return new ArrayList<String>(0);
 	}
 
 	@Override

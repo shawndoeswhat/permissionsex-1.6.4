@@ -42,10 +42,10 @@ public class StringUtils {
 
 		for (String str : array) {
 			buffer.append(separator);
-			buffer.append(str);
+			buffer.append(str.trim());
 		}
 
-		return buffer.substring(separator.length()).trim();
+		return buffer.substring(separator.length());
 	}
 
 	/**

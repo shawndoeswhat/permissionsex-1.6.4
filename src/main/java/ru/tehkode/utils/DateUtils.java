@@ -4,44 +4,39 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DateUtils {
-	protected final static Pattern INTERVAL_PATTERN = Pattern.compile("((?:\\d+)|(?:\\d+\\.\\d+))\\s*(second|minute|hour|day|week|month|year|s|m|h|d|w)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INTERVAL_PATTERN = Pattern.compile(
+        "(\\d+(?:\\.\\d+)?)\\s*(seconds?|minutes?|hours?|days?|weeks?|months?|years?|s|m|h|d|w)",
+        Pattern.CASE_INSENSITIVE
+    );
 
+    public static int parseInterval(String arg) {
+        if (arg.matches("^\\d+$")) {
+            return Integer.parseInt(arg);
+        }
 
-	public static int parseInterval(String arg) {
-		if (arg.matches("^\\d+$")) {
-			return Integer.parseInt(arg);
-		}
+        Matcher match = INTERVAL_PATTERN.matcher(arg);
+        int interval = 0;
 
-		Matcher match = INTERVAL_PATTERN.matcher(arg);
+        while (match.find()) {
+            float value = Float.parseFloat(match.group(1));
+            int seconds = getSecondsIn(match.group(2));
+            interval += Math.round(value * seconds);
+        }
 
-		int interval = 0;
+        return interval;
+    }
 
-		while (match.find()) {
-			interval += Math.round(Float.parseFloat(match.group(1)) * getSecondsIn(match.group(2)));
-		}
-
-		return interval;
-	}
-
-	public static int getSecondsIn(String type) {
-		type = type.toLowerCase();
-
-		if ("second".equals(type) || "s".equals(type)) {
-			return 1;
-		} else if ("minute".equals(type) || "m".equals(type)) {
-			return 60;
-		} else if ("hour".equals(type) || "h".equals(type)) {
-			return 3600;
-		} else if ("day".equals(type) || "d".equals(type)) {
-			return 86400;
-		} else if ("week".equals(type) || "w".equals(type)) {
-			return 604800;
-		} else if ("month".equals(type)) {
-			return 2592000;
-		} else if ("year".equals(type)) {
-			return 31104000;
-		}
-
-		return 0;
-	}
+    public static int getSecondsIn(String type) {
+        switch (type.toLowerCase()) {
+            case "second": case "seconds": case "s": return 1;
+            case "minute": case "minutes": case "m": return 60;
+            case "hour": case "hours": case "h": return 3600;
+            case "day": case "days": case "d": return 86400;
+            case "week": case "weeks": case "w": return 604800;
+            case "month": case "months": return 2592000;
+            case "year": case "years": return 31104000;
+            default:
+                throw new IllegalArgumentException("Unknown time unit: " + type);
+        }
+    }
 }
