@@ -22,9 +22,3 @@ permissionsex-1.6.4/
 ```
 
 3. After that, you can build the project as normal.
-
-## Important Notes
-
-* The project needs this file to build correctly.
-* Do **not** share this file with others or put it online.
-* If the build gives errors about missing files, check if the `craftbukkit-1.6.4-R2.0.jar` file is in the right place.
