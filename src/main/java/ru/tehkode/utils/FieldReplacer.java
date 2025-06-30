@@ -12,6 +12,12 @@ public class FieldReplacer<Instance, Type> {
 
     private final Class<Type> requiredType;
     private final Field field;
+    private static boolean verboseLogging;
+
+    static {
+        String verboseFlag = System.getProperty("verboseLogging");
+        verboseLogging = "true".equalsIgnoreCase(verboseFlag);
+    }
 
     private static boolean isTypeCompatible(Class<?> fieldType, Class<?> requiredType) {
         if (requiredType.isAssignableFrom(fieldType)) {
@@ -41,24 +47,23 @@ public class FieldReplacer<Instance, Type> {
         this.requiredType = requiredType;
 
         try {
-            System.out.println("Looking for field '" + fieldName + "' in class " + clazz.getName());
+            logVerbose("Looking for field '" + fieldName + "' in class " + clazz.getName());
             this.field = clazz.getDeclaredField(fieldName);
             this.field.setAccessible(true);
 
             if (!isTypeCompatible(field.getType(), requiredType)) {
-                System.err.println("Field '" + fieldName + "' is of type " + field.getType().getName() +
+                logVerbose("Field '" + fieldName + "' is of type " + field.getType().getName() +
                         ", expected " + requiredType.getName());
                 throw new ExceptionInInitializerError("Field '" + fieldName + "' has incorrect type.");
             }
 
-            System.out.println("Field '" + fieldName + "' successfully bound to " + field.getType().getName());
+            logVerbose("Field '" + fieldName + "' successfully bound to " + field.getType().getName());
 
         } catch (NoSuchFieldException e) {
-            System.err.println("Field '" + fieldName + "' not found in class " + clazz.getName());
+            logVerbose("Field '" + fieldName + "' not found in class " + clazz.getName());
             throw new ExceptionInInitializerError(e);
         }
     }
-
 
     /**
      * Gets the value of the field from the given instance.
@@ -69,10 +74,10 @@ public class FieldReplacer<Instance, Type> {
     public Type get(Instance instance) {
         try {
             Type value = requiredType.cast(field.get(instance));
-            System.out.println("Retrieved value from field '" + field.getName() + "': " + value);
+            logVerbose("Retrieved value from field '" + field.getName() + "': " + value);
             return value;
         } catch (IllegalAccessException e) {
-            System.err.println("Failed to access field '" + field.getName() + "' for getting value.");
+            logVerbose("Failed to access field '" + field.getName() + "' for getting value.");
             throw new Error(e);
         }
     }
@@ -85,11 +90,22 @@ public class FieldReplacer<Instance, Type> {
      */
     public void set(Instance instance, Type newValue) {
         try {
-            System.out.println("Setting field '" + field.getName() + "' to value: " + newValue);
+            logVerbose("Setting field '" + field.getName() + "' to value: " + newValue);
             field.set(instance, newValue);
         } catch (IllegalAccessException e) {
-            System.err.println("Failed to access field '" + field.getName() + "' for setting value.");
+            logVerbose("Failed to access field '" + field.getName() + "' for setting value.");
             throw new Error(e);
+        }
+    }
+
+    /**
+     * Logs verbose messages with a [PermissionsEx] prefix if verbose logging is enabled.
+     *
+     * @param message The message to log.
+     */
+    private static void logVerbose(String message) {
+        if (verboseLogging) {
+            System.out.println("[PermissionsEx] " + message);
         }
     }
 }
